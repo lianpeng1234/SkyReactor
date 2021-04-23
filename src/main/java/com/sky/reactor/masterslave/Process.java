@@ -10,15 +10,18 @@ public class Process implements Runnable {
 
     private final SocketChannel socketChannel;
 
-    public Process(String requestMsg, SocketChannel socketChannel) {
+    private final String slaveSelectorName;
+
+    public Process(String requestMsg, SocketChannel socketChannel, String slaveSelectorName) {
         this.requestMsg = requestMsg;
         this.socketChannel = socketChannel;
+        this.slaveSelectorName = slaveSelectorName;
     }
 
     @Override
     public void run() {
         try {
-            System.out.println(Thread.currentThread().getName() + " 接收到的消息是 " + requestMsg);
+            System.out.println(slaveSelectorName + " 接收到来自(" + socketChannel.getRemoteAddress() + ")的消息，并交给线程(" + Thread.currentThread().getName() + ")处理 " + requestMsg);
 
             // 响应
             socketChannel.write(ByteBuffer.wrap(("你的消息我收到了" + System.lineSeparator()).getBytes(StandardCharsets.UTF_8)));

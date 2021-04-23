@@ -31,7 +31,7 @@ public class Reactor {
         // 将 ServerSocketChannel 关心的 accept 事件注册到 Selector
         SelectionKey key = serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT);
         // 注册 accept 事件的处理器
-        key.attach(new Accept());
+        key.attach(new Accept(selector, serverSocketChannel));
 
         // 死循环接收链接
         while (true) {
@@ -49,14 +49,8 @@ public class Reactor {
 
     private void dispatcher(SelectionKey selectionKey) {
         Object object = selectionKey.attachment();
-        if (object instanceof Accept) {
-            Accept accept = (Accept) object;
-            accept.accept(selectionKey.selector(), (ServerSocketChannel) selectionKey.channel());
-        }
-        if (object instanceof Worker) {
-            Worker worker = (Worker) object;
-            worker.work((SocketChannel) selectionKey.channel());
-        }
+        Runnable runnable = (Runnable) object;
+        runnable.run();
     }
 
 }

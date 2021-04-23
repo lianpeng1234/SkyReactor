@@ -9,9 +9,12 @@ import java.util.Set;
 
 public class SlaveReactor {
 
+    // false：未开始 select，true：开始 select
+    private volatile boolean status = false;
+
     private Selector selector;
 
-    private volatile boolean status = false;
+    private String name;
 
     {
         try {
@@ -21,6 +24,10 @@ public class SlaveReactor {
         }
     }
 
+    public SlaveReactor(String name) {
+        this.name = name;
+    }
+
     public void register(SocketChannel sc) {
         try {
             // 设置为非阻塞
@@ -28,7 +35,7 @@ public class SlaveReactor {
             // 将 socket 关心的 read 事件注册到 selector
             SelectionKey key = sc.register(selector, SelectionKey.OP_READ);
             // 注册 read 事件的处理器
-            key.attach(new Worker());
+            key.attach(new Worker(sc, name));
 
             // 开始监听事件
             start();
@@ -45,7 +52,7 @@ public class SlaveReactor {
         Thread t = new Thread(new Runnable() {
             @Override
             public void run() {
-                // 死循环接收链接
+                // 死循环接收事件
                 while (true) {
                     // 阻塞的
                     try {
@@ -68,10 +75,8 @@ public class SlaveReactor {
 
     private void dispatcher(SelectionKey selectionKey) {
         Object object = selectionKey.attachment();
-        if (object instanceof Worker) {
-            Worker worker = (Worker) object;
-            worker.work((SocketChannel) selectionKey.channel());
-        }
+        Runnable runnable = (Runnable) object;
+        runnable.run();
     }
 
 }
